@@ -1,0 +1,925 @@
+<?php
+// ============================================================
+// BillPro — index.php  (serve with: php -S localhost:8000)
+// ============================================================
+session_start();
+?><!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BillPro — Billing Software</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root{--bg:#0f1117;--s1:#171c28;--s2:#1e2438;--bd:#2d3555;--a:#4d94ff;--green:#34d399;--red:#f87171;--yellow:#fbbf24;--text:#e2e8f0;--muted:#64748b;--sw:250px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--s1)}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 40% 40%,#1e2438 0%,#0f1117 65%)}
+.login-box{width:400px;max-width:96vw;background:var(--s2);border:1px solid var(--bd);border-radius:16px;padding:32px;box-shadow:0 24px 48px rgba(0,0,0,.5)}
+.login-logo{font-size:26px;font-weight:800;color:var(--a);text-align:center;margin-bottom:5px}
+.login-tagline{text-align:center;color:var(--muted);font-size:13px;margin-bottom:28px}
+.role-tabs{display:flex;background:var(--s1);border-radius:8px;padding:3px;gap:3px;margin-bottom:20px}
+.role-tab{flex:1;padding:8px;border:none;background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;transition:.2s}
+.role-tab.active{background:var(--a);color:#000;font-weight:700}
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}
+.form-input{width:100%;padding:10px 12px;background:var(--s1);border:1px solid var(--bd);border-radius:8px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;outline:none;transition:.2s}
+.form-input:focus{border-color:var(--a)}
+select.form-input{cursor:pointer}
+.btn{padding:10px 18px;border:none;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;transition:.2s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--a);color:#000;width:100%;justify-content:center;margin-top:4px}
+.btn-primary:hover{filter:brightness(1.1)}
+.login-hint{text-align:center;font-size:12px;color:var(--muted);margin-top:14px}
+.login-hint b{color:var(--green)}
+#app{display:none;min-height:100vh}
+.layout{display:flex}
+.sidebar{width:var(--sw);background:var(--s1);border-right:1px solid var(--bd);height:100vh;position:sticky;top:0;display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+.sb-brand{padding:18px 14px;border-bottom:1px solid var(--bd)}
+.sb-logo{font-size:18px;font-weight:800;color:var(--a)}
+.sb-tagline{font-size:10px;color:var(--muted);margin-top:2px}
+.sb-user{padding:12px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px}
+.sb-avatar{width:32px;height:32px;background:var(--a);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#000;flex-shrink:0}
+.sb-name{font-size:12px;font-weight:600}.sb-role{font-size:10px;color:var(--muted)}
+.nav-area{padding:10px 6px;flex:1}
+.nav-section-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:8px 8px 3px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;cursor:pointer;color:var(--muted);font-size:13px;font-weight:500;transition:.15s;margin-bottom:1px}
+.nav-item:hover{background:var(--s2);color:var(--text)}
+.nav-item.active{background:rgba(77,148,255,.12);color:var(--a)}
+.nav-icon{width:16px;text-align:center;font-size:14px}
+.sb-footer{padding:10px}
+.btn-logout{width:100%;padding:8px;background:transparent;border:1px solid var(--bd);border-radius:7px;color:var(--muted);cursor:pointer;font-size:12px;transition:.2s}
+.btn-logout:hover{border-color:var(--red);color:var(--red)}
+.main-content{flex:1;padding:26px;overflow-y:auto;max-width:calc(100vw - var(--sw))}
+.page{display:none;animation:fadeIn .2s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.page-header{margin-bottom:22px}
+.page-title{font-size:24px;font-weight:700}
+.page-subtitle{color:var(--muted);font-size:13px;margin-top:3px}
+.card{background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:18px;margin-bottom:14px}
+.card-title{font-weight:700;font-size:14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:18px}
+.stat-card{background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:16px}
+.stat-icon{font-size:20px;margin-bottom:8px}
+.stat-value{font-size:22px;font-weight:700}
+.stat-label{font-size:12px;color:var(--muted);margin-top:2px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:8px 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);border-bottom:1px solid var(--bd)}
+td{padding:10px;border-bottom:1px solid rgba(45,53,85,.45)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.015)}
+.badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;display:inline-block}
+.badge-paid{background:rgba(52,211,153,.12);color:var(--green)}
+.badge-pending{background:rgba(251,191,36,.12);color:var(--yellow)}
+.badge-cancelled{background:rgba(248,113,113,.12);color:var(--red)}
+.action-bar{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.search-box{background:var(--s1);border:1px solid var(--bd);border-radius:8px;color:var(--text);padding:8px 12px;font-family:'Inter',sans-serif;font-size:13px;flex:1;min-width:160px;outline:none}
+.search-box:focus{border-color:var(--a)}
+.btn-sm{padding:6px 11px;font-size:12px;border-radius:6px}
+.btn-green{background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.25)}
+.btn-green:hover{background:rgba(52,211,153,.22)}
+.btn-red{background:rgba(248,113,113,.12);color:var(--red);border:1px solid rgba(248,113,113,.25)}
+.btn-red:hover{background:rgba(248,113,113,.22)}
+.btn-blue{background:rgba(77,148,255,.12);color:var(--a);border:1px solid rgba(77,148,255,.25)}
+.btn-blue:hover{background:rgba(77,148,255,.22)}
+.btn-yellow{background:rgba(251,191,36,.12);color:var(--yellow);border:1px solid rgba(251,191,36,.25)}
+.btn-yellow:hover{background:rgba(251,191,36,.22)}
+.btn-outline{background:transparent;border:1px solid var(--bd);color:var(--text)}
+.btn-outline:hover{border-color:var(--a);color:var(--a)}
+.form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.form-full{grid-column:1/-1}
+.divider{height:1px;background:var(--bd);margin:14px 0}
+.bill-layout{display:grid;grid-template-columns:1fr 340px;gap:14px;align-items:start}
+.add-item-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+.qty-input{width:65px;background:var(--s1);border:1px solid var(--bd);border-radius:6px;color:var(--text);padding:5px 6px;text-align:center;outline:none;font-size:13px}
+.summary-panel{background:var(--s1);border-radius:8px;padding:14px;margin-top:10px}
+.summary-row{display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:var(--muted)}
+.summary-total{display:flex;justify-content:space-between;padding:8px 0 0;margin-top:6px;border-top:1px solid var(--bd);font-size:17px;font-weight:700}
+.sticky-panel{position:sticky;top:16px}
+.gst-type-toggle{display:flex;background:var(--s1);border-radius:7px;padding:3px;gap:3px;width:fit-content;margin-bottom:12px}
+.gst-type-btn{padding:5px 14px;border:none;background:transparent;color:var(--muted);border-radius:5px;cursor:pointer;font-size:12px;font-weight:500;transition:.15s}
+.gst-type-btn.active{background:var(--a);color:#000;font-weight:700}
+.info-box{background:rgba(77,148,255,.06);border:1px solid rgba(77,148,255,.18);border-radius:7px;padding:10px;font-size:12px;color:var(--muted);margin-bottom:12px}
+.info-box b{color:var(--a)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;pointer-events:none;transition:.2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal-box{background:var(--s2);border:1px solid var(--bd);border-radius:14px;padding:26px;width:540px;max-width:96vw;max-height:90vh;overflow-y:auto;transform:scale(.95);transition:.2s}
+.modal-overlay.open .modal-box{transform:scale(1)}
+.modal-lg{width:760px}.modal-sm{width:400px}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:18px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.invoice-wrapper{background:#fff;color:#111827;border-radius:8px;padding:28px;font-family:'Inter',sans-serif}
+.invoice-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #e5e7eb}
+.invoice-company-name{font-size:20px;font-weight:800;color:#1d4ed8}
+.invoice-company-details{font-size:11px;color:#6b7280;margin-top:4px;line-height:1.6}
+.invoice-number-value{font-size:20px;font-weight:800;color:#1d4ed8;text-align:right}
+.invoice-date{font-size:12px;color:#6b7280;text-align:right;margin-top:3px}
+.invoice-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;font-size:13px}
+.invoice-section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#9ca3af;margin-bottom:4px}
+.invoice-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px}
+.invoice-table th{background:#f9fafb;padding:7px 8px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280}
+.invoice-table td{padding:7px 8px;border-bottom:1px solid #e5e7eb;color:#111827}
+.invoice-totals{background:#f9fafb;border-radius:8px;padding:14px}
+.invoice-total-row{display:flex;justify-content:space-between;padding:3px 0;font-size:13px;color:#6b7280}
+.invoice-grand-total{display:flex;justify-content:space-between;padding:8px 0 0;margin-top:6px;border-top:2px solid #d1d5db;font-size:16px;font-weight:800;color:#1d4ed8}
+.invoice-footer{margin-top:14px;text-align:center;font-size:11px;color:#9ca3af;padding-top:10px;border-top:1px solid #e5e7eb}
+.status-paid{background:#d1fae5;color:#065f46;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.status-pending{background:#fef3c7;color:#92400e;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700}
+#toast{position:fixed;bottom:18px;right:18px;background:var(--s2);border:1px solid var(--a);border-radius:8px;padding:11px 16px;font-size:13px;font-weight:500;z-index:9999;transform:translateY(50px);opacity:0;transition:.3s;max-width:280px}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.error{border-color:var(--red)}
+.empty-state{text-align:center;padding:36px 20px;color:var(--muted)}
+.empty-icon{font-size:36px;margin-bottom:8px}
+.text-green{color:var(--green)}.text-red{color:var(--red)}.text-muted{color:var(--muted)}.text-blue{color:var(--a)}
+#printArea{display:none}
+@media print{body>*:not(#printArea){display:none!important}#printArea{display:block!important;position:fixed;inset:0;background:#fff;z-index:99999;padding:20px;overflow:auto}}
+@media(max-width:900px){.bill-layout{grid-template-columns:1fr}.form-grid-2,.form-grid-3{grid-template-columns:1fr}.invoice-grid-2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">🧾 BillPro</div>
+    <div class="login-tagline">Professional Billing Software</div>
+    <div class="role-tabs">
+      <button class="role-tab active" onclick="switchRole('admin')">🛡️ Admin</button>
+      <button class="role-tab" onclick="switchRole('staff')">👤 Staff</button>
+    </div>
+    <div class="form-group"><label class="form-label">Username</label>
+      <input class="form-input" id="loginUsername" type="text" placeholder="Enter username"/></div>
+    <div class="form-group"><label class="form-label">Password</label>
+      <input class="form-input" id="loginPassword" type="password" placeholder="Enter password"
+        onkeydown="if(event.key==='Enter')doLogin()"/></div>
+    <button class="btn btn-primary" onclick="doLogin()">Sign In →</button>
+    <div class="login-hint">Admin: <b>admin / admin123</b> &nbsp;|&nbsp; Staff: <b>staff / staff123</b></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sb-brand"><div class="sb-logo">🧾 BillPro</div><div class="sb-tagline">Billing Software</div></div>
+      <div class="sb-user">
+        <div class="sb-avatar" id="sidebarAvatar">A</div>
+        <div><div class="sb-name" id="sidebarName">Admin</div><div class="sb-role" id="sidebarRole">Administrator</div></div>
+      </div>
+      <nav class="nav-area" id="sidebarNav"></nav>
+      <div class="sb-footer"><button class="btn-logout" onclick="doLogout()">⬅ Sign Out</button></div>
+    </aside>
+
+    <main class="main-content">
+
+      <!-- DASHBOARD -->
+      <div class="page" id="pageDashboard">
+        <div class="page-header"><div class="page-title">Dashboard</div><div class="page-subtitle" id="dashGreeting"></div></div>
+        <div class="stats-grid" id="dashStats"></div>
+        <div class="card"><div class="card-title">Recent Bills</div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Bill #</th><th>Date</th><th>Customer</th><th>Total</th><th>Status</th></tr></thead>
+            <tbody id="dashRecentBills"></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- NEW BILL -->
+      <div class="page" id="pageNewBill">
+        <div class="page-header"><div class="page-title">Create New Bill</div><div class="page-subtitle">Fill in customer details and add items</div></div>
+        <div class="bill-layout">
+          <div>
+            <div class="card">
+              <div class="card-title">Customer Information</div>
+              <div class="form-grid-2">
+                <div class="form-group form-full">
+                  <label class="form-label">Select Existing Customer</label>
+                  <select class="form-input" id="billCustSelect" onchange="fillCustomer(this.value)">
+                    <option value="">— New / Manual Entry —</option>
+                  </select>
+                </div>
+                <div class="form-group"><label class="form-label">Customer Name *</label><input class="form-input" id="billCustName" placeholder="Full name"/></div>
+                <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="billCustPhone" placeholder="Mobile number"/></div>
+                <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="billCustEmail" placeholder="email@example.com"/></div>
+                <div class="form-group"><label class="form-label">GSTIN</label><input class="form-input" id="billCustGstin" placeholder="GST number (optional)"/></div>
+                <div class="form-group form-full"><label class="form-label">Address</label><input class="form-input" id="billCustAddress" placeholder="Full address"/></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Bill Items</div>
+              <div class="add-item-row" style="margin-bottom:12px">
+                <div class="form-group" style="flex:2;margin:0"><label class="form-label">Item</label>
+                  <select class="form-input" id="billItemSel"><option value="">Select item...</option></select></div>
+                <div class="form-group" style="margin:0"><label class="form-label">Qty</label><input class="qty-input" id="billItemQty" type="number" value="1" min="1"/></div>
+                <button class="btn btn-blue btn-sm" style="margin-top:20px" onclick="addBillItem()">+ Add</button>
+              </div>
+              <div class="table-wrap"><table>
+                <thead><tr><th>#</th><th>Item</th><th>HSN</th><th>Qty</th><th>Rate</th><th>GST%</th><th>Amount</th><th></th></tr></thead>
+                <tbody id="billItemsTable"></tbody>
+              </table></div>
+              <div id="billEmptyItems" class="empty-state" style="padding:16px"><div class="empty-icon">📦</div><div>No items added yet</div></div>
+            </div>
+          </div>
+          <div class="sticky-panel">
+            <div class="card">
+              <div class="card-title">Bill Settings</div>
+              <div class="form-group"><label class="form-label">Bill Date</label><input class="form-input" id="billDate" type="date"/></div>
+              <div class="form-group"><label class="form-label">Due Date</label><input class="form-input" id="billDueDate" type="date"/></div>
+              <div class="form-group"><label class="form-label">Payment Mode</label>
+                <select class="form-input" id="billPayMode">
+                  <option>Cash</option><option>UPI</option><option>Card</option><option>Bank Transfer</option><option>Cheque</option>
+                </select>
+              </div>
+              <div class="form-group"><label class="form-label">Status</label>
+                <select class="form-input" id="billStatus">
+                  <option value="pending">Pending</option><option value="paid">Paid</option>
+                </select>
+              </div>
+              <div class="form-group"><label class="form-label">Notes</label><input class="form-input" id="billNotes" placeholder="Optional note..."/></div>
+              <div class="gst-type-toggle">
+                <button class="gst-type-btn active" onclick="setGstType('inclusive',this)">GST Inclusive</button>
+                <button class="gst-type-btn" onclick="setGstType('exclusive',this)">GST Exclusive</button>
+              </div>
+              <div class="form-group"><label class="form-label">Discount (₹)</label><input class="form-input" id="billDiscount" type="number" value="0" oninput="calcSummary()"/></div>
+              <div class="summary-panel" id="billSummary"></div>
+              <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="saveBill()">💾 Save Bill</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BILLS LIST -->
+      <div class="page" id="pageBills">
+        <div class="page-header"><div class="page-title">All Bills</div><div class="page-subtitle">Manage and view all invoices</div></div>
+        <div class="action-bar">
+          <input class="search-box" id="billsSearch" placeholder="Search bills..." oninput="loadBills()"/>
+          <select class="form-input" id="billsFilter" style="width:130px" onchange="loadBills()">
+            <option value="">All Status</option><option value="paid">Paid</option><option value="pending">Pending</option><option value="cancelled">Cancelled</option>
+          </select>
+          <button class="btn btn-blue btn-sm" onclick="showPage('pageNewBill')">+ New Bill</button>
+        </div>
+        <div class="card"><div class="table-wrap"><table>
+          <thead><tr><th>Bill #</th><th>Date</th><th>Customer</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="billsTable"></tbody>
+        </table></div></div>
+      </div>
+
+      <!-- CUSTOMERS -->
+      <div class="page" id="pageCustomers">
+        <div class="page-header"><div class="page-title">Customers</div><div class="page-subtitle">Manage your customer database</div></div>
+        <div class="action-bar">
+          <input class="search-box" id="custSearch" placeholder="Search customers..." oninput="loadCustomers()"/>
+          <button class="btn btn-blue btn-sm" onclick="openCustModal()">+ Add Customer</button>
+        </div>
+        <div class="card"><div class="table-wrap"><table>
+          <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>City</th><th>GSTIN</th><th>Actions</th></tr></thead>
+          <tbody id="custTable"></tbody>
+        </table></div></div>
+      </div>
+
+      <!-- INVENTORY -->
+      <div class="page" id="pageInventory">
+        <div class="page-header"><div class="page-title">Inventory</div><div class="page-subtitle">Products and services catalogue</div></div>
+        <div class="action-bar">
+          <input class="search-box" id="invSearch" placeholder="Search items..." oninput="loadInventory()"/>
+          <button class="btn btn-blue btn-sm" onclick="openInvModal()">+ Add Item</button>
+        </div>
+        <div class="card"><div class="table-wrap"><table>
+          <thead><tr><th>Name</th><th>HSN</th><th>Price</th><th>GST%</th><th>Stock</th><th>Unit</th><th>Actions</th></tr></thead>
+          <tbody id="invTable"></tbody>
+        </table></div></div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="page" id="pageSettings">
+        <div class="page-header"><div class="page-title">Settings</div><div class="page-subtitle">Company information & preferences</div></div>
+        <div class="card" style="max-width:600px">
+          <div class="card-title">Company Details</div>
+          <div class="form-grid-2">
+            <div class="form-group form-full"><label class="form-label">Company Name</label><input class="form-input" id="setCompName"/></div>
+            <div class="form-group form-full"><label class="form-label">Address</label><input class="form-input" id="setCompAddr"/></div>
+            <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="setCompPhone"/></div>
+            <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="setCompEmail"/></div>
+            <div class="form-group"><label class="form-label">GSTIN</label><input class="form-input" id="setCompGstin"/></div>
+            <div class="form-group"><label class="form-label">Bill Prefix</label><input class="form-input" id="setPrefix"/></div>
+          </div>
+          <button class="btn btn-primary" style="width:auto;margin-top:8px" onclick="saveSettings()">💾 Save Settings</button>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modalCustomer">
+  <div class="modal-box">
+    <div class="modal-title" id="custModalTitle">Add Customer</div>
+    <input type="hidden" id="custModalId"/>
+    <div class="form-grid-2">
+      <div class="form-group"><label class="form-label">Name *</label><input class="form-input" id="custName"/></div>
+      <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="custPhone"/></div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="custEmail"/></div>
+      <div class="form-group"><label class="form-label">GSTIN</label><input class="form-input" id="custGstin"/></div>
+      <div class="form-group"><label class="form-label">City</label><input class="form-input" id="custCity"/></div>
+      <div class="form-group"><label class="form-label">State</label><input class="form-input" id="custState"/></div>
+      <div class="form-group form-full"><label class="form-label">Address</label><input class="form-input" id="custAddress"/></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modalCustomer')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveCustomer()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalInventory">
+  <div class="modal-box">
+    <div class="modal-title" id="invModalTitle">Add Item</div>
+    <input type="hidden" id="invModalId"/>
+    <div class="form-grid-2">
+      <div class="form-group form-full"><label class="form-label">Item Name *</label><input class="form-input" id="invName"/></div>
+      <div class="form-group"><label class="form-label">Price (₹) *</label><input class="form-input" id="invPrice" type="number"/></div>
+      <div class="form-group"><label class="form-label">Stock</label><input class="form-input" id="invStock" type="number"/></div>
+      <div class="form-group"><label class="form-label">Unit</label><input class="form-input" id="invUnit" placeholder="pcs / kg / hrs"/></div>
+      <div class="form-group"><label class="form-label">HSN Code</label><input class="form-input" id="invHsn"/></div>
+      <div class="form-group"><label class="form-label">GST %</label>
+        <select class="form-input" id="invGst"><option>0</option><option>5</option><option>12</option><option selected>18</option><option>28</option></select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modalInventory')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveInventoryItem()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalInvoice">
+  <div class="modal-box modal-lg">
+    <div class="modal-title">Invoice Preview</div>
+    <div id="invoiceContent"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modalInvoice')">Close</button>
+      <button class="btn btn-yellow btn-sm" onclick="printInvoice()">🖨 Print</button>
+      <button class="btn btn-green btn-sm" onclick="downloadPDF()">⬇ PDF</button>
+    </div>
+  </div>
+</div>
+
+<div id="printArea"></div>
+<div id="toast"></div>
+
+<script>
+// ============================================================
+// CONFIG — PHP backend API base URL
+// ============================================================
+const API = 'api.php';
+
+// ── State ────────────────────────────────────────────────────
+let currentUser = null, currentRole = 'admin';
+let billItems = [], gstType = 'inclusive', inventoryCache = [], settingsCache = {};
+
+// ── API helper ───────────────────────────────────────────────
+async function api(path, method = 'GET', body = null) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(`${API}/${path}`, opts);
+  return r.json();
+}
+
+// ── Toast ────────────────────────────────────────────────────
+function toast(msg, err = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'show' + (err ? ' error' : '');
+  setTimeout(() => t.className = '', 3000);
+}
+
+// ── Role switch on login screen ───────────────────────────────
+function switchRole(role) {
+  currentRole = role;
+  document.querySelectorAll('.role-tab').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+// ── Login ────────────────────────────────────────────────────
+async function doLogin() {
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!username || !password) { toast('Enter username and password', true); return; }
+  const res = await api('login', 'POST', { username, password, role: currentRole });
+  if (res.ok) {
+    currentUser = res.user;
+    localStorage.setItem('bp_token', res.token);
+    initApp();
+  } else { toast('Invalid credentials', true); }
+}
+
+async function doLogout() {
+  await api('logout', 'POST');
+  localStorage.removeItem('bp_token');
+  currentUser = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+// ── Init app after login ──────────────────────────────────────
+async function initApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('sidebarName').textContent = currentUser.name;
+  document.getElementById('sidebarRole').textContent = currentUser.role === 'admin' ? 'Administrator' : 'Staff';
+  document.getElementById('sidebarAvatar').textContent = currentUser.name[0].toUpperCase();
+  buildNav();
+  settingsCache = await api('settings');
+  inventoryCache = await api('inventory');
+  showPage('pageDashboard');
+}
+
+// ── Navigation ───────────────────────────────────────────────
+function buildNav() {
+  const isAdmin = currentUser.role === 'admin';
+  const nav = [
+    { icon: '📊', label: 'Dashboard', page: 'pageDashboard' },
+    { icon: '➕', label: 'New Bill', page: 'pageNewBill' },
+    { icon: '🧾', label: 'All Bills', page: 'pageBills' },
+    { icon: '👥', label: 'Customers', page: 'pageCustomers' },
+    { icon: '📦', label: 'Inventory', page: 'pageInventory' },
+    ...(isAdmin ? [{ icon: '⚙️', label: 'Settings', page: 'pageSettings' }] : []),
+  ];
+  document.getElementById('sidebarNav').innerHTML = nav.map(n =>
+    `<div class="nav-item" id="nav_${n.page}" onclick="showPage('${n.page}')">
+       <span class="nav-icon">${n.icon}</span>${n.label}</div>`).join('');
+}
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(id)?.classList.add('active');
+  document.getElementById('nav_' + id)?.classList.add('active');
+  if (id === 'pageDashboard') loadDashboard();
+  if (id === 'pageBills')     loadBills();
+  if (id === 'pageCustomers') loadCustomers();
+  if (id === 'pageInventory') loadInventory();
+  if (id === 'pageNewBill')   initNewBill();
+  if (id === 'pageSettings')  loadSettings();
+}
+
+// ── Dashboard ────────────────────────────────────────────────
+async function loadDashboard() {
+  const s = await api('stats');
+  const cur = settingsCache.currency || '₹';
+  document.getElementById('dashGreeting').textContent =
+    'Welcome back, ' + currentUser.name + '! Here\'s your overview.';
+  document.getElementById('dashStats').innerHTML = [
+    { icon:'🧾', value: s.total_bills,              label:'Total Bills' },
+    { icon:'✅', value: cur + fmt(s.total_revenue),  label:'Total Revenue' },
+    { icon:'⏳', value: cur + fmt(s.pending_amount), label:'Pending Amount' },
+    { icon:'👥', value: s.total_customers,           label:'Customers' },
+    { icon:'📦', value: s.total_inventory,           label:'Inventory Items' },
+    { icon:'📅', value: cur + fmt(s.month_revenue),  label:'This Month' },
+  ].map(c => `<div class="stat-card"><div class="stat-icon">${c.icon}</div>
+    <div class="stat-value">${c.value}</div><div class="stat-label">${c.label}</div></div>`).join('');
+  document.getElementById('dashRecentBills').innerHTML =
+    (s.recent_bills||[]).map(b => `<tr>
+      <td><b>${b.bill_no}</b></td><td>${b.date}</td>
+      <td>${b.customer_name||''}</td>
+      <td>${cur}${fmt(b.grand_total)}</td>
+      <td><span class="badge badge-${b.status}">${b.status}</span></td>
+    </tr>`).join('') || '<tr><td colspan="5" class="empty-state">No bills yet</td></tr>';
+}
+
+// ── New Bill ─────────────────────────────────────────────────
+async function initNewBill() {
+  billItems = [];
+  inventoryCache = await api('inventory');
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('billDate').value = today;
+  document.getElementById('billDueDate').value = today;
+  document.getElementById('billDiscount').value = 0;
+  document.getElementById('billCustName').value = '';
+  document.getElementById('billCustPhone').value = '';
+  document.getElementById('billCustEmail').value = '';
+  document.getElementById('billCustGstin').value = '';
+  document.getElementById('billCustAddress').value = '';
+  // Fill item dropdown
+  document.getElementById('billItemSel').innerHTML =
+    '<option value="">Select item...</option>' +
+    inventoryCache.map(i => `<option value="${i.id}">${i.name} — ₹${i.price}</option>`).join('');
+  // Fill customer dropdown
+  const custs = await api('customers');
+  document.getElementById('billCustSelect').innerHTML =
+    '<option value="">— New / Manual Entry —</option>' +
+    custs.map(c => `<option value="${c.id}">${c.name} (${c.phone||''})</option>`).join('');
+  renderBillItems();
+  calcSummary();
+}
+
+function fillCustomer(id) {
+  if (!id) return;
+  api('customers/' + id).then(c => {
+    if (!c) return;
+    document.getElementById('billCustName').value    = c.name || '';
+    document.getElementById('billCustPhone').value   = c.phone || '';
+    document.getElementById('billCustEmail').value   = c.email || '';
+    document.getElementById('billCustGstin').value   = c.gstin || '';
+    document.getElementById('billCustAddress').value = c.address || '';
+  });
+}
+
+function addBillItem() {
+  const sel = document.getElementById('billItemSel');
+  const qty = parseFloat(document.getElementById('billItemQty').value) || 1;
+  const item = inventoryCache.find(i => i.id === sel.value);
+  if (!item) { toast('Select an item first', true); return; }
+  const existing = billItems.find(b => b.item_id === item.id);
+  if (existing) { existing.qty += qty; }
+  else billItems.push({ item_id: item.id, name: item.name, hsn: item.hsn||'',
+    rate: parseFloat(item.price), qty, gst: parseFloat(item.gst||0), unit: item.unit||'pcs' });
+  renderBillItems(); calcSummary();
+}
+
+function removeBillItem(idx) { billItems.splice(idx, 1); renderBillItems(); calcSummary(); }
+
+function renderBillItems() {
+  const tb = document.getElementById('billItemsTable');
+  const em = document.getElementById('billEmptyItems');
+  if (!billItems.length) { tb.innerHTML = ''; em.style.display = ''; return; }
+  em.style.display = 'none';
+  tb.innerHTML = billItems.map((b, i) => {
+    const amt = b.rate * b.qty;
+    return `<tr><td>${i+1}</td><td>${b.name}</td><td>${b.hsn}</td>
+      <td><input class="qty-input" type="number" value="${b.qty}" min="1"
+        onchange="billItems[${i}].qty=+this.value;calcSummary()"/></td>
+      <td>₹${fmt(b.rate)}</td><td>${b.gst}%</td>
+      <td>₹${fmt(amt)}</td>
+      <td><button class="btn btn-red btn-sm" onclick="removeBillItem(${i})">✕</button></td></tr>`;
+  }).join('');
+}
+
+function setGstType(type, btn) {
+  gstType = type;
+  document.querySelectorAll('.gst-type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  calcSummary();
+}
+
+function calcSummary() {
+  const discount = parseFloat(document.getElementById('billDiscount')?.value) || 0;
+  let subtotal = 0, totalGst = 0;
+  billItems.forEach(b => {
+    const lineAmt = b.rate * b.qty;
+    if (gstType === 'inclusive') {
+      const base = lineAmt / (1 + b.gst / 100);
+      subtotal += base; totalGst += lineAmt - base;
+    } else {
+      subtotal += lineAmt; totalGst += lineAmt * b.gst / 100;
+    }
+  });
+  const grand = subtotal + totalGst - discount;
+  document.getElementById('billSummary').innerHTML = `
+    <div class="summary-row"><span>Subtotal</span><span>₹${fmt(subtotal)}</span></div>
+    <div class="summary-row"><span>GST</span><span>₹${fmt(totalGst)}</span></div>
+    <div class="summary-row"><span>Discount</span><span>-₹${fmt(discount)}</span></div>
+    <div class="summary-total"><span>Grand Total</span><span>₹${fmt(grand)}</span></div>`;
+  return { subtotal: round(subtotal), total_gst: round(totalGst), discount, grand_total: round(grand) };
+}
+
+async function saveBill() {
+  if (!billItems.length) { toast('Add at least one item', true); return; }
+  const cname = document.getElementById('billCustName').value.trim();
+  if (!cname) { toast('Enter customer name', true); return; }
+  const totals = calcSummary();
+  const bill = {
+    customer_name:    cname,
+    customer_phone:   document.getElementById('billCustPhone').value,
+    customer_email:   document.getElementById('billCustEmail').value,
+    customer_gstin:   document.getElementById('billCustGstin').value,
+    customer_address: document.getElementById('billCustAddress').value,
+    date:             document.getElementById('billDate').value,
+    due_date:         document.getElementById('billDueDate').value,
+    pay_mode:         document.getElementById('billPayMode').value,
+    status:           document.getElementById('billStatus').value,
+    notes:            document.getElementById('billNotes').value,
+    gst_type:         gstType,
+    items:            billItems,
+    ...totals,
+  };
+  const res = await api('bills', 'POST', bill);
+  if (res.ok) {
+    toast('Bill saved! Bill No: ' + res.bill.bill_no);
+    viewInvoice(res.bill);
+    showPage('pageBills');
+  } else toast('Error saving bill', true);
+}
+
+// ── Bills List ───────────────────────────────────────────────
+async function loadBills() {
+  const q      = document.getElementById('billsSearch')?.value || '';
+  const status = document.getElementById('billsFilter')?.value || '';
+  let url = 'bills';
+  const params = [];
+  if (q)      params.push('q=' + encodeURIComponent(q));
+  if (status) params.push('status=' + status);
+  if (params.length) url += '?' + params.join('&');
+  const bills = await api(url);
+  const cur = settingsCache.currency || '₹';
+  document.getElementById('billsTable').innerHTML = bills.length
+    ? bills.map(b => `<tr>
+        <td><b>${b.bill_no}</b></td><td>${b.date}</td>
+        <td>${b.customer_name}</td>
+        <td>${cur}${fmt(b.grand_total)}</td>
+        <td><span class="badge badge-${b.status}">${b.status}</span></td>
+        <td style="display:flex;gap:4px">
+          <button class="btn btn-blue btn-sm" onclick="viewBill('${b.id}')">👁 View</button>
+          <button class="btn btn-green btn-sm" onclick="markPaid('${b.id}','${b.status}')">
+            ${b.status==='paid'?'↩ Unpaid':'✅ Paid'}</button>
+          <button class="btn btn-red btn-sm" onclick="deleteBill('${b.id}')">🗑</button>
+        </td></tr>`).join('')
+    : '<tr><td colspan="6" class="empty-state">No bills found</td></tr>';
+}
+
+async function viewBill(id) {
+  const b = await api('bills/' + id);
+  if (b) viewInvoice(b);
+}
+
+async function markPaid(id, status) {
+  const newStatus = status === 'paid' ? 'pending' : 'paid';
+  await api('bills/' + id, 'PUT', { status: newStatus });
+  toast('Status updated'); loadBills();
+}
+
+async function deleteBill(id) {
+  if (!confirm('Delete this bill?')) return;
+  await api('bills/' + id, 'DELETE');
+  toast('Bill deleted'); loadBills();
+}
+
+// ── Customers ────────────────────────────────────────────────
+async function loadCustomers() {
+  const q = document.getElementById('custSearch')?.value || '';
+  const list = await api('customers' + (q ? '?q=' + encodeURIComponent(q) : ''));
+  document.getElementById('custTable').innerHTML = list.length
+    ? list.map(c => `<tr>
+        <td><b>${c.name}</b></td><td>${c.phone||''}</td>
+        <td>${c.email||''}</td><td>${c.city||''}</td><td>${c.gstin||'-'}</td>
+        <td style="display:flex;gap:4px">
+          <button class="btn btn-blue btn-sm" onclick="editCustomer('${c.id}')">✏️</button>
+          <button class="btn btn-red btn-sm" onclick="deleteCustomer('${c.id}')">🗑</button>
+        </td></tr>`).join('')
+    : '<tr><td colspan="6" class="empty-state">No customers found</td></tr>';
+}
+
+function openCustModal(c) {
+  ['custModalId','custName','custPhone','custEmail','custGstin','custCity','custState','custAddress']
+    .forEach(id => document.getElementById(id).value = '');
+  document.getElementById('custModalTitle').textContent = 'Add Customer';
+  openModal('modalCustomer');
+}
+
+async function editCustomer(id) {
+  const c = await api('customers/' + id);
+  document.getElementById('custModalId').value   = c.id;
+  document.getElementById('custName').value      = c.name || '';
+  document.getElementById('custPhone').value     = c.phone || '';
+  document.getElementById('custEmail').value     = c.email || '';
+  document.getElementById('custGstin').value     = c.gstin || '';
+  document.getElementById('custCity').value      = c.city || '';
+  document.getElementById('custState').value     = c.state || '';
+  document.getElementById('custAddress').value   = c.address || '';
+  document.getElementById('custModalTitle').textContent = 'Edit Customer';
+  openModal('modalCustomer');
+}
+
+async function saveCustomer() {
+  const id = document.getElementById('custModalId').value;
+  const data = {
+    name:    document.getElementById('custName').value.trim(),
+    phone:   document.getElementById('custPhone').value,
+    email:   document.getElementById('custEmail').value,
+    gstin:   document.getElementById('custGstin').value,
+    city:    document.getElementById('custCity').value,
+    state:   document.getElementById('custState').value,
+    address: document.getElementById('custAddress').value,
+  };
+  if (!data.name) { toast('Name is required', true); return; }
+  if (id) await api('customers/' + id, 'PUT', data);
+  else    await api('customers', 'POST', data);
+  toast('Customer saved'); closeModal('modalCustomer'); loadCustomers();
+}
+
+async function deleteCustomer(id) {
+  if (!confirm('Delete customer?')) return;
+  await api('customers/' + id, 'DELETE');
+  toast('Customer deleted'); loadCustomers();
+}
+
+// ── Inventory ────────────────────────────────────────────────
+async function loadInventory() {
+  const q = document.getElementById('invSearch')?.value || '';
+  const list = await api('inventory' + (q ? '?q=' + encodeURIComponent(q) : ''));
+  inventoryCache = list;
+  document.getElementById('invTable').innerHTML = list.length
+    ? list.map(i => `<tr>
+        <td><b>${i.name}</b></td><td>${i.hsn||''}</td>
+        <td>₹${fmt(i.price)}</td><td>${i.gst||0}%</td>
+        <td class="${(i.stock||0)<10?'text-red':'text-green'}">${i.stock||0}</td>
+        <td>${i.unit||'pcs'}</td>
+        <td style="display:flex;gap:4px">
+          <button class="btn btn-blue btn-sm" onclick="editInvItem('${i.id}')">✏️</button>
+          <button class="btn btn-red btn-sm" onclick="deleteInvItem('${i.id}')">🗑</button>
+        </td></tr>`).join('')
+    : '<tr><td colspan="7" class="empty-state">No items found</td></tr>';
+}
+
+function openInvModal() {
+  ['invModalId','invName','invPrice','invStock','invUnit','invHsn'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('invGst').value = '18';
+  document.getElementById('invModalTitle').textContent = 'Add Item';
+  openModal('modalInventory');
+}
+
+async function editInvItem(id) {
+  const item = inventoryCache.find(i => i.id === id) || await api('inventory/' + id);
+  document.getElementById('invModalId').value = item.id;
+  document.getElementById('invName').value    = item.name || '';
+  document.getElementById('invPrice').value   = item.price || '';
+  document.getElementById('invStock').value   = item.stock || '';
+  document.getElementById('invUnit').value    = item.unit || '';
+  document.getElementById('invHsn').value     = item.hsn || '';
+  document.getElementById('invGst').value     = item.gst || '18';
+  document.getElementById('invModalTitle').textContent = 'Edit Item';
+  openModal('modalInventory');
+}
+
+async function saveInventoryItem() {
+  const id = document.getElementById('invModalId').value;
+  const data = {
+    name:  document.getElementById('invName').value.trim(),
+    price: parseFloat(document.getElementById('invPrice').value) || 0,
+    stock: parseInt(document.getElementById('invStock').value) || 0,
+    unit:  document.getElementById('invUnit').value,
+    hsn:   document.getElementById('invHsn').value,
+    gst:   parseInt(document.getElementById('invGst').value) || 0,
+  };
+  if (!data.name) { toast('Item name required', true); return; }
+  if (id) await api('inventory/' + id, 'PUT', data);
+  else    await api('inventory', 'POST', data);
+  toast('Item saved'); closeModal('modalInventory'); loadInventory();
+}
+
+async function deleteInvItem(id) {
+  if (!confirm('Delete item?')) return;
+  await api('inventory/' + id, 'DELETE');
+  toast('Item deleted'); loadInventory();
+}
+
+// ── Settings ─────────────────────────────────────────────────
+async function loadSettings() {
+  const s = await api('settings');
+  settingsCache = s;
+  document.getElementById('setCompName').value  = s.company_name || '';
+  document.getElementById('setCompAddr').value  = s.company_address || '';
+  document.getElementById('setCompPhone').value = s.company_phone || '';
+  document.getElementById('setCompEmail').value = s.company_email || '';
+  document.getElementById('setCompGstin').value = s.company_gstin || '';
+  document.getElementById('setPrefix').value    = s.bill_prefix || 'INV';
+}
+
+async function saveSettings() {
+  const data = {
+    company_name:    document.getElementById('setCompName').value,
+    company_address: document.getElementById('setCompAddr').value,
+    company_phone:   document.getElementById('setCompPhone').value,
+    company_email:   document.getElementById('setCompEmail').value,
+    company_gstin:   document.getElementById('setCompGstin').value,
+    bill_prefix:     document.getElementById('setPrefix').value,
+  };
+  await api('settings', 'POST', data);
+  settingsCache = { ...settingsCache, ...data };
+  toast('Settings saved');
+}
+
+// ── Invoice Preview ──────────────────────────────────────────
+function viewInvoice(b) {
+  const s = settingsCache;
+  const cur = s.currency || '₹';
+  const html = `<div class="invoice-wrapper">
+    <div class="invoice-header">
+      <div>
+        <div class="invoice-company-name">${s.company_name||'BillPro'}</div>
+        <div class="invoice-company-details">${s.company_address||''}<br/>
+          📞 ${s.company_phone||''} &nbsp;✉ ${s.company_email||''}<br/>
+          GSTIN: ${s.company_gstin||'N/A'}</div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:#9ca3af;text-align:right">INVOICE</div>
+        <div class="invoice-number-value">${b.bill_no}</div>
+        <div class="invoice-date">Date: ${b.date}</div>
+        <div class="invoice-date">Due: ${b.due_date||b.date}</div>
+        <div style="margin-top:6px"><span class="status-${b.status}">${b.status.toUpperCase()}</span></div>
+      </div>
+    </div>
+    <div class="invoice-grid-2">
+      <div><div class="invoice-section-label">Bill To</div>
+        <b>${b.customer_name}</b><br/>
+        ${b.customer_phone||''} ${b.customer_email?'&nbsp;|&nbsp;'+b.customer_email:''}<br/>
+        ${b.customer_address||''}
+        ${b.customer_gstin?'<br/>GSTIN: '+b.customer_gstin:''}
+      </div>
+      <div><div class="invoice-section-label">Payment</div>
+        Mode: ${b.pay_mode||'Cash'}<br/>
+        GST Type: ${b.gst_type||'inclusive'}
+        ${b.notes?'<br/>Notes: '+b.notes:''}
+      </div>
+    </div>
+    <table class="invoice-table">
+      <thead><tr><th>#</th><th>Item</th><th>HSN</th><th>Qty</th><th>Rate</th><th>GST%</th><th>Amount</th></tr></thead>
+      <tbody>${(b.items||[]).map((item,i)=>`<tr>
+        <td>${i+1}</td><td>${item.name}</td><td>${item.hsn||''}</td>
+        <td>${item.qty} ${item.unit||''}</td>
+        <td>${cur}${fmt(item.rate)}</td>
+        <td>${item.gst||0}%</td>
+        <td>${cur}${fmt(item.rate*item.qty)}</td></tr>`).join('')}
+      </tbody>
+    </table>
+    <div class="invoice-totals">
+      <div class="invoice-total-row"><span>Subtotal</span><span>${cur}${fmt(b.subtotal)}</span></div>
+      <div class="invoice-total-row"><span>GST</span><span>${cur}${fmt(b.total_gst)}</span></div>
+      <div class="invoice-total-row"><span>Discount</span><span>-${cur}${fmt(b.discount||0)}</span></div>
+      <div class="invoice-grand-total"><span>Grand Total</span><span>${cur}${fmt(b.grand_total)}</span></div>
+    </div>
+    <div class="invoice-footer">Thank you for your business! — ${s.company_name||'BillPro'}</div>
+  </div>`;
+  document.getElementById('invoiceContent').innerHTML = html;
+  openModal('modalInvoice');
+  window._currentBill = b;
+}
+
+function printInvoice() {
+  document.getElementById('printArea').innerHTML = document.getElementById('invoiceContent').innerHTML;
+  window.print();
+}
+
+function downloadPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const b = window._currentBill;
+  const s = settingsCache;
+  const cur = s.currency || '₹';
+  doc.setFontSize(16); doc.setTextColor(29,78,216);
+  doc.text(s.company_name||'BillPro', 14, 20);
+  doc.setFontSize(9); doc.setTextColor(100);
+  doc.text(s.company_address||'', 14, 27);
+  doc.text('GSTIN: '+(s.company_gstin||''), 14, 32);
+  doc.setFontSize(14); doc.setTextColor(29,78,216);
+  doc.text('INVOICE #'+b.bill_no, 140, 20);
+  doc.setFontSize(9); doc.setTextColor(100);
+  doc.text('Date: '+b.date, 140, 27);
+  doc.text('Status: '+b.status.toUpperCase(), 140, 32);
+  doc.setFontSize(10); doc.setTextColor(0);
+  doc.text('Bill To: '+b.customer_name, 14, 44);
+  doc.text(b.customer_phone||'', 14, 49);
+  const rows = (b.items||[]).map((item,i)=>[
+    i+1, item.name, item.hsn||'', item.qty+' '+(item.unit||''),
+    cur+fmt(item.rate), item.gst+'%', cur+fmt(item.rate*item.qty)
+  ]);
+  doc.autoTable({
+    startY:56, head:[['#','Item','HSN','Qty','Rate','GST%','Amount']],
+    body: rows, styles:{fontSize:9}, headStyles:{fillColor:[29,78,216]}
+  });
+  const y = doc.lastAutoTable.finalY + 8;
+  doc.setFontSize(10);
+  doc.text('Subtotal: '+cur+fmt(b.subtotal), 140, y);
+  doc.text('GST: '+cur+fmt(b.total_gst), 140, y+6);
+  doc.text('Discount: -'+cur+fmt(b.discount||0), 140, y+12);
+  doc.setFontSize(13); doc.setTextColor(29,78,216);
+  doc.text('Grand Total: '+cur+fmt(b.grand_total), 140, y+21);
+  doc.save('Invoice_'+b.bill_no+'.pdf');
+}
+
+// ── Modal helpers ────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ── Number helpers ───────────────────────────────────────────
+function fmt(n)   { return (parseFloat(n)||0).toFixed(2); }
+function round(n) { return Math.round((parseFloat(n)||0)*100)/100; }
+
+// ── Auto-login check on page load ────────────────────────────
+window.addEventListener('load', async () => {
+  const token = localStorage.getItem('bp_token');
+  if (token) {
+    const res = await api('session');
+    if (res.ok) { currentUser = res.user; initApp(); return; }
+    localStorage.removeItem('bp_token');
+  }
+  document.getElementById('loginScreen').style.display = 'flex';
+});
+</script>
+</body>
+</html>
